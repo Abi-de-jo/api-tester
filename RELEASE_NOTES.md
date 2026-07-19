@@ -73,7 +73,13 @@ fab4954 Initial commit from Create Next App
 
 #### Commits
 ```
-<commits to be added>
+c06354c feat: install @supabase/supabase-js and create client
+c22c391 feat: add feature-flags API route and update proxy for all HTTP methods
+28420f4 feat: add PUT/PATCH/DELETE methods with Supabase feature flag gating
+4c3a8b0 docs: update README and release notes for features
+46992a4 docs: update RELEASE_NOTES.md with v1.1.0 commit references
+4a2eeaf feat: switch POST to post_method feature flag control
+e75cbf8 docs: update README and RELEASE_NOTES for post_method feature flag
 ```
 4c3a8b0 docs: update README and release notes for v1.1.0 feature flags
 28420f4 feat: add PUT/PATCH/DELETE methods with Supabase feature flag gating
