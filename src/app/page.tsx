@@ -35,12 +35,14 @@ export default function Home() {
   const [featureFlags, setFeatureFlags] = useState<Record<string, boolean>>({})
   const [flagsLoading, setFlagsLoading] = useState(true)
 
-  const alwaysVisible: HttpMethod[] = ['GET', 'POST']
-  const flagControlled: HttpMethod[] = ['PUT', 'PATCH', 'DELETE']
+  const alwaysVisible: HttpMethod[] = ['GET']
+  const flagControlled: { method: HttpMethod; flag: string }[] = [
+    { method: 'POST', flag: 'post_method' },
+  ]
 
   const availableMethods = [
     ...alwaysVisible,
-    ...flagControlled.filter((m) => featureFlags[m] === true),
+    ...flagControlled.filter((f) => featureFlags[f.flag] === true).map((f) => f.method),
   ]
 
   useEffect(() => {
@@ -54,7 +56,7 @@ export default function Home() {
         const data = await res.json()
         if (data.flags) setFeatureFlags(data.flags)
       } catch {
-        // flags unavailable — fall back to GET/POST only
+        // flags unavailable — fall back to GET only
       } finally {
         setFlagsLoading(false)
       }
