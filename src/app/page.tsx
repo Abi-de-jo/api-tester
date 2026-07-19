@@ -50,9 +50,19 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
+    function getUserId(): string {
+      let userId = localStorage.getItem('api_tester_user_id')
+      if (!userId) {
+        userId = 'user_' + crypto.randomUUID()
+        localStorage.setItem('api_tester_user_id', userId)
+      }
+      return userId
+    }
+
     async function loadFlags() {
       try {
-        const res = await fetch('/api/feature-flags?user_id=default')
+        const userId = getUserId()
+        const res = await fetch(`/api/feature-flags?user_id=${userId}`)
         const data = await res.json()
         if (data.flags) setFeatureFlags(data.flags)
       } catch {
