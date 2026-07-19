@@ -9,14 +9,15 @@ export async function POST(request: NextRequest) {
 
   try {
     const finalHeaders: Record<string, string> = { ...headers };
-    if (method === 'POST' && body && !finalHeaders['Content-Type'] && !finalHeaders['content-type']) {
+    const hasBody = ['POST', 'PUT', 'PATCH'].includes(method);
+    if (hasBody && body && !finalHeaders['Content-Type'] && !finalHeaders['content-type']) {
       finalHeaders['Content-Type'] = 'application/json';
     }
 
     const res = await fetch(url, {
       method,
       headers: finalHeaders,
-      body: method === 'POST' ? body : undefined,
+      body: hasBody ? body : undefined,
       signal: controller.signal,
     });
 
