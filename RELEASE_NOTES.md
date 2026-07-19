@@ -1,5 +1,61 @@
 # Release Notes
 
+## v1.2.0 — Restore Simple GET + POST MVP (2026-07-19)
+
+### What's New
+
+**Revert to simple MVP** — the entire feature-flag system has been removed. GET and POST are always visible to everyone. No Supabase client, no flag API, no localStorage user IDs.
+
+#### Changes
+- **GET & POST always available** — simple method selector, no flag gating
+- **Removed all feature flag logic** — no `getUserId()`, `loadFlags()`, `alwaysVisible` / `flagControlled`
+- **Deleted `src/app/api/feature-flags/route.ts`** — no server-side flag API
+- **Deleted `src/lib/supabase.ts`** — Supabase client removed
+- **Removed `@supabase/supabase-js` dependency** — cleaner dependency tree
+- **Cleaned `.env.local`** — Supabase environment variables removed
+- **Updated README** — feature flags section removed; documents simple GET+POST MVP
+
+#### Notes
+- The `feature_flags` table may still exist in Supabase; the app no longer connects to it
+- Smaller build, zero external calls on page load
+
+#### Commits
+```
+(see git log for v1.2.0)
+```
+
+---
+
+## v1.1.0 — Post-Method Feature Flag (2026-07-19)
+
+### What's New
+
+**POST behind feature flag** — POST method is now controlled by a Supabase-backed flag. Only users with the `post_method` flag enabled can see POST. GET remains available to everyone.
+
+#### Core Features
+- **Selective POST access** — POST method visibility controlled by `post_method` feature flag
+- **GET always available** — no flag required for GET requests
+- **Feature flag API** — `/api/feature-flags` for fetching flags by user
+
+#### Infrastructure
+- **Supabase integration** — `feature_flags` table with RLS, anon read policy
+- **API route** — `/api/feature-flags` with GET (fetch flags) and POST (upsert flag)
+- **Supabase client** — `src/lib/supabase.ts` initialized with env vars
+- **Flag-controlled UI** — method selector dynamically shows/hides POST based on flag
+
+#### Commits
+```
+c06354c feat: install @supabase/supabase-js and create client
+c22c391 feat: add feature-flags API route and update proxy for all HTTP methods
+28420f4 feat: add PUT/PATCH/DELETE methods with Supabase feature flag gating
+4c3a8b0 docs: update README and release notes for features
+46992a4 docs: update RELEASE_NOTES.md with v1.1.0 commit references
+4a2eeaf feat: switch POST to post_method feature flag control
+e75cbf8 docs: update README and RELEASE_NOTES for post_method feature flag
+```
+
+---
+
 ## v1.0.0 — Initial Release (2026-07-19)
 
 ### What's New
@@ -51,69 +107,3 @@ cf60be9 feat: add tailwind theme and layout styling
 e1c8234 feat: add shadcn/ui, monaco editor, sonner, lucide dependencies
 fab4954 Initial commit from Create Next App
 ```
-
----
-
-## v1.1.0 — Post-Method Feature Flag (2026-07-19)
-
-### What's New
-
-**POST behind feature flag** — POST method is now controlled by a Supabase-backed flag. Only users with the `post_method` flag enabled can see POST. GET remains available to everyone.
-
-#### Core Features
-- **Selective POST access** — POST method visibility controlled by `post_method` feature flag
-- **GET always available** — no flag required for GET requests
-- **Feature flag API** — `/api/feature-flags` for fetching flags by user
-
-#### Infrastructure
-- **Supabase integration** — `feature_flags` table with RLS, anon read policy
-- **API route** — `/api/feature-flags` with GET (fetch flags) and POST (upsert flag)
-- **Supabase client** — `src/lib/supabase.ts` initialized with env vars
-- **Flag-controlled UI** — method selector dynamically shows/hides POST based on flag
-
-#### Commits
-```
-c06354c feat: install @supabase/supabase-js and create client
-c22c391 feat: add feature-flags API route and update proxy for all HTTP methods
-28420f4 feat: add PUT/PATCH/DELETE methods with Supabase feature flag gating
-4c3a8b0 docs: update README and release notes for features
-46992a4 docs: update RELEASE_NOTES.md with v1.1.0 commit references
-4a2eeaf feat: switch POST to post_method feature flag control
-e75cbf8 docs: update README and RELEASE_NOTES for post_method feature flag
-```
-4c3a8b0 docs: update README and release notes for v1.1.0 feature flags
-28420f4 feat: add PUT/PATCH/DELETE methods with Supabase feature flag gating
-c22c391 feat: add feature-flags API route and update proxy for all HTTP methods
-c06354c feat: install @supabase/supabase-js and create client
-```
-
----
-
-## v1.2.0 — Remove Feature Flags & Simplify to GET-only (2026-07-19)
-
-### What's New
-
-**Back to basics** — all feature flag code has been removed. The app now ships with only the GET method, making it a focused, lightweight API testing tool for showcase.
-
-#### Changes
-- **Removed all feature flag logic** from the main page — `getUserId()`, `loadFlags()`, and flag-gated method visibility are gone
-- **GET-only interface** — the method selector is replaced with a static GET badge
-- **Deleted `src/app/api/feature-flags/route.ts`** — no more server-side flag API
-- **Deleted `src/lib/supabase.ts`** — Supabase client removed
-- **Removed `@supabase/supabase-js` dependency** — cleaner dependency tree
-- **Cleaned `.env.local`** — Supabase environment variables removed
-- **Updated README** — feature flags section removed, project structure simplified
-
-#### Infrastructure
-- **Zero external dependencies** for feature management — no database, no API calls on page load
-- **Smaller build** — fewer packages, faster cold starts
-
-#### Commits
-```
-<will be added after push>
-```
-
----
-- Environment variables
-- AI-powered error explanations
-- Code generation (cURL, Python, JavaScript, Go)

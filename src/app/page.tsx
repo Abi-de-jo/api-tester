@@ -6,6 +6,13 @@ import { toast } from 'sonner'
 import { ZapIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { HeaderEditor } from '@/components/header-editor'
 import { ResponseViewer } from '@/components/response-viewer'
@@ -14,6 +21,8 @@ import { type RequestConfig, type ApiResponse, type HistoryItem, type HttpMethod
 import { getHistory, addToHistory, clearHistory, deleteHistoryItem } from '@/lib/history'
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false })
+
+const AVAILABLE_METHODS: HttpMethod[] = ['GET', 'POST']
 
 export default function Home() {
   const [requestConfig, setRequestConfig] = useState<RequestConfig>({
@@ -41,6 +50,15 @@ export default function Home() {
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       toast.error('URL must start with http:// or https://')
       return
+    }
+
+    if (method === 'POST' && requestConfig.body.trim()) {
+      try {
+        JSON.parse(requestConfig.body)
+      } catch {
+        toast.error('Invalid JSON body')
+        return
+      }
     }
 
     const headers: Record<string, string> = {}
@@ -112,9 +130,26 @@ export default function Home() {
       </div>
 
       <div className="flex items-end gap-2">
-        <div className="flex h-10 w-[120px] items-center justify-center rounded-md border bg-muted text-sm font-medium">
-          GET
-        </div>
+        <Select
+          value={method}
+          onValueChange={(value) =>
+            setRequestConfig((prev) => ({
+              ...prev,
+              method: value as HttpMethod,
+            }))
+          }
+        >
+          <SelectTrigger className="w-[120px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {AVAILABLE_METHODS.map((m) => (
+              <SelectItem key={m} value={m}>
+                {m}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         <Input
           placeholder="https://api.example.com/users"
@@ -144,7 +179,7 @@ export default function Home() {
           />
         </TabsContent>
         <TabsContent value="body">
-          {['POST', 'PUT', 'PATCH'].includes(method) ? (
+          {method === 'POST' ? (
             <MonacoEditor
               height="200px"
               language="json"

@@ -9,11 +9,13 @@ A lightweight, fast API testing tool for developers who need a clutter-free alte
 
 **Live:** [api-tester-beryl.vercel.app](https://api-tester-beryl.vercel.app)
 
+**Version:** v1.2.0 — simple GET + POST MVP (feature flags removed)
+
 ---
 
 ## Features
 
-- **GET** — test any API endpoint
+- **GET & POST** — always available to everyone
 - **Custom headers** — add Authorization, Content-Type, or any header
 - **JSON body editor** — Monaco Editor with syntax highlighting and formatting
 - **Server-side proxy** — no CORS issues, all requests go through Next.js API route
@@ -66,10 +68,12 @@ npm start
 
 ## How It Works
 
-1. **Enter a URL** — paste any API endpoint
-2. **Add headers** (optional) — Authorization, Content-Type, etc.
-3. **Click Send** — request goes through server proxy (no CORS)
-4. **View response** — status, timing, formatted JSON
+1. **Choose method** — GET or POST
+2. **Enter a URL** — paste any API endpoint
+3. **Add headers** (optional) — Authorization, Content-Type, etc.
+4. **Add body** (POST) — JSON payload in the Monaco editor
+5. **Click Send** — request goes through server proxy (no CORS)
+6. **View response** — status, timing, formatted JSON
 
 ## Project Structure
 
@@ -77,7 +81,7 @@ npm start
 api-tester/
 ├── src/
 │   ├── app/
-│   │   ├── api/proxy/route.ts        # Server-side proxy (avoids CORS)
+│   │   ├── api/proxy/route.ts     # Server-side proxy (avoids CORS)
 │   │   ├── globals.css            # Tailwind/shadcn theme
 │   │   ├── layout.tsx             # Root layout
 │   │   └── page.tsx               # Main UI
@@ -104,7 +108,7 @@ All requests go through `/api/proxy` to avoid CORS restrictions. The proxy:
 
 ## Future Plans
 
-- [ ] Authentication helpers (Bearer, Basic, API Key)
+- [ ] PUT / PATCH / DELETE methods
 - [ ] Authentication helpers (Bearer, Basic, API Key)
 - [ ] Import cURL commands
 - [ ] Request collections / saved requests
