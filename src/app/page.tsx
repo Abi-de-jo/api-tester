@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 import { toast } from 'sonner'
-import { ZapIcon } from 'lucide-react'
+import { ZapIcon, CopyIcon, RefreshCwIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -20,6 +20,7 @@ import { HistoryPanel } from '@/components/history-panel'
 import { type RequestConfig, type ApiResponse, type HistoryItem, type HttpMethod } from '@/types'
 import { getHistory, addToHistory, clearHistory, deleteHistoryItem } from '@/lib/history'
 import { isValidUserId } from '@/lib/validate'
+import { getDeviceId, resetDeviceId } from '@/lib/device-id'
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false })
 
@@ -35,70 +36,59 @@ export default function Home() {
   const [response, setResponse] = useState<ApiResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [history, setHistory] = useState<HistoryItem[]>([])
-  const [userId, setUserId] = useState('')
   const [postEnabled, setPostEnabled] = useState(false)
-  const [accessStatus, setAccessStatus] = useState<'idle' | 'checking' | 'granted' | 'denied' | 'invalid'>('idle')
+  const [accessStatus, setAccessStatus] = useState<'checking' | 'granted' | 'denied'>('checking')
 
   const method = requestConfig.method
+
+  // Stable device ID — generated once, persisted in localStorage
+  const deviceId = useMemo(() => getDeviceId(), [])
 
   useEffect(() => {
     setHistory(getHistory())
   }, [])
 
-  const checkAccess = useCallback(async (id: string) => {
-    const trimmed = id.trim()
-    if (!trimmed) {
-      setPostEnabled(false)
-      setAccessStatus('idle')
-      setRequestConfig((prev) =>
-        prev.method === 'POST' ? { ...prev, method: 'GET' } : prev
-      )
-      return
-    }
-    if (!isValidUserId(trimmed)) {
-      setPostEnabled(false)
-      setAccessStatus('invalid')
-      setRequestConfig((prev) =>
-        prev.method === 'POST' ? { ...prev, method: 'GET' } : prev
-      )
-      return
-    }
-
-    setAccessStatus('checking')
-    try {
-      const res = await fetch(`/api/access?user_id=${encodeURIComponent(trimmed)}`)
-      const data = await res.json()
-      if (!res.ok) {
+  // Auto-check access on mount using the device ID
+  useEffect(() => {
+    const checkAccess = async () => {
+      const id = deviceId
+      if (!id || !isValidUserId(id)) {
         setPostEnabled(false)
-        setAccessStatus('invalid')
-        setRequestConfig((prev) =>
-          prev.method === 'POST' ? { ...prev, method: 'GET' } : prev
-        )
+        setAccessStatus('denied')
         return
       }
-      const enabled = !!data.postEnabled
-      setPostEnabled(enabled)
-      setAccessStatus(enabled ? 'granted' : 'denied')
-      if (!enabled) {
-        setRequestConfig((prev) =>
-          prev.method === 'POST' ? { ...prev, method: 'GET' } : prev
-        )
+
+      try {
+        const res = await fetch(`/api/access?user_id=${encodeURIComponent(id)}`)
+        const data = await res.json()
+        if (!res.ok) {
+          setPostEnabled(false)
+          setAccessStatus('denied')
+          return
+        }
+        const enabled = !!data.postEnabled
+        setPostEnabled(enabled)
+        setAccessStatus(enabled ? 'granted' : 'denied')
+      } catch {
+        setPostEnabled(false)
+        setAccessStatus('denied')
       }
-    } catch {
-      setPostEnabled(false)
-      setAccessStatus('denied')
-      setRequestConfig((prev) =>
-        prev.method === 'POST' ? { ...prev, method: 'GET' } : prev
-      )
     }
+
+    void checkAccess()
+  }, [deviceId])
+
+  const handleResetId = useCallback(() => {
+    resetDeviceId()
+    window.location.reload()
   }, [])
 
-  useEffect(() => {
-    if (userId.trim()) {
-      void checkAccess(userId)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  const handleCopyId = useCallback(() => {
+    navigator.clipboard.writeText(deviceId).then(
+      () => toast.success('Device ID copied'),
+      () => toast.error('Failed to copy')
+    )
+  }, [deviceId])
 
   const handleSend = useCallback(async () => {
     const url = requestConfig.url.trim()
@@ -114,10 +104,6 @@ export default function Home() {
     if (method === 'POST') {
       if (!postEnabled) {
         toast.error('POST not available')
-        return
-      }
-      if (!isValidUserId(userId.trim())) {
-        toast.error('Invalid user_id')
         return
       }
       if (requestConfig.body.trim()) {
@@ -147,7 +133,7 @@ export default function Home() {
           method,
           headers,
           body: requestConfig.body,
-          user_id: userId.trim() || undefined,
+          user_id: deviceId,
         }),
       })
       const data = await res.json()
@@ -169,18 +155,18 @@ export default function Home() {
     } finally {
       setLoading(false)
     }
-  }, [requestConfig, method, postEnabled, userId])
+  }, [requestConfig, method, postEnabled, deviceId])
 
-  const statusLabel =
-    accessStatus === 'checking'
-      ? 'Checking…'
-      : accessStatus === 'granted'
-        ? 'POST enabled'
-        : accessStatus === 'denied'
-          ? 'POST not granted'
-          : accessStatus === 'invalid'
-            ? 'Invalid user id'
-            : ''
+  const statusBadge =
+    accessStatus === 'checking' ? (
+      <span className="text-sm text-muted-foreground">Checking access…</span>
+    ) : accessStatus === 'granted' ? (
+      <span className="text-sm text-green-600 font-medium">POST enabled</span>
+    ) : (
+      <span className="text-sm text-amber-600">
+        POST not granted — copy your ID below and ask the owner to add it
+      </span>
+    )
 
   return (
     <div className="flex min-h-screen">
@@ -252,38 +238,35 @@ export default function Home() {
         </Button>
       </div>
 
-      <div className="flex items-center gap-2">
-        <label htmlFor="user-id" className="text-sm font-medium whitespace-nowrap">
-          User ID
-        </label>
-        <Input
-          id="user-id"
-          placeholder="Enter your user id"
-          value={userId}
-          onChange={(e) => setUserId(e.target.value)}
-          onBlur={() => void checkAccess(userId)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault()
-              void checkAccess(userId)
-            }
-          }}
-          className="flex-1"
-        />
-        {statusLabel ? (
-          <span
-            className={
-              accessStatus === 'granted'
-                ? 'text-sm text-green-600'
-                : accessStatus === 'checking'
-                  ? 'text-sm text-muted-foreground'
-                  : 'text-sm text-red-600'
-            }
-          >
-            {statusLabel}
-          </span>
-        ) : null}
+      {/* Auto-generated device ID row */}
+      <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Device ID
+            </span>
+            <button
+              onClick={handleCopyId}
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              title="Copy device ID"
+            >
+              <CopyIcon className="size-3" />
+              Copy
+            </button>
+          </div>
+          <code className="block text-sm font-mono truncate mt-0.5">{deviceId}</code>
+        </div>
+        <button
+          onClick={handleResetId}
+          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0"
+          title="Generate new device ID"
+        >
+          <RefreshCwIcon className="size-3" />
+          Reset
+        </button>
       </div>
+
+      <div className="flex items-center gap-2">{statusBadge}</div>
 
       <Tabs defaultValue="headers">
         <TabsList>
