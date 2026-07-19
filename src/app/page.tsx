@@ -1,65 +1,205 @@
-import Image from "next/image";
+'use client'
+
+import { useState, useCallback, useEffect } from 'react'
+import dynamic from 'next/dynamic'
+import { toast } from 'sonner'
+import { ZapIcon } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { HeaderEditor } from '@/components/header-editor'
+import { ResponseViewer } from '@/components/response-viewer'
+import { HistoryPanel } from '@/components/history-panel'
+import { type RequestConfig, type ApiResponse, type HistoryItem } from '@/types'
+import { getHistory, addToHistory, clearHistory, deleteHistoryItem } from '@/lib/history'
+
+const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false })
 
 export default function Home() {
+  const [requestConfig, setRequestConfig] = useState<RequestConfig>({
+    url: '',
+    method: 'GET',
+    headers: [],
+    body: '',
+  })
+  const [response, setResponse] = useState<ApiResponse | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [history, setHistory] = useState<HistoryItem[]>([])
+
+  useEffect(() => {
+    setHistory(getHistory())
+  }, [])
+
+  const method = requestConfig.method
+
+  const handleSend = useCallback(async () => {
+    const url = requestConfig.url.trim()
+    if (!url) {
+      toast.error('URL is required')
+      return
+    }
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      toast.error('URL must start with http:// or https://')
+      return
+    }
+
+    if (method === 'POST' && requestConfig.body.trim()) {
+      try {
+        JSON.parse(requestConfig.body)
+      } catch {
+        toast.error('Invalid JSON body')
+        return
+      }
+    }
+
+    const headers: Record<string, string> = {}
+    for (const h of requestConfig.headers) {
+      if (h.enabled && h.key.trim()) {
+        headers[h.key.trim()] = h.value
+      }
+    }
+
+    setLoading(true)
+    try {
+      const res = await fetch('/api/proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url,
+          method,
+          headers,
+          body: requestConfig.body,
+        }),
+      })
+      const data = await res.json()
+      if (data.error) {
+        toast.error(data.error)
+        return
+      }
+      setResponse(data as ApiResponse)
+      const historyItem: HistoryItem = {
+        id: crypto.randomUUID(),
+        timestamp: Date.now(),
+        request: requestConfig,
+        response: data as ApiResponse,
+      }
+      addToHistory(historyItem)
+      setHistory((prev) => [historyItem, ...prev].slice(0, 20))
+    } catch (err: any) {
+      toast.error(err.message || 'Request failed')
+    } finally {
+      setLoading(false)
+    }
+  }, [requestConfig, method])
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="flex min-h-screen">
+      <HistoryPanel
+        history={history}
+        onSelect={(item) => {
+          setRequestConfig(item.request)
+          setResponse(item.response)
+        }}
+        onClear={() => {
+          clearHistory()
+          setHistory([])
+        }}
+        onDelete={(id) => {
+          deleteHistoryItem(id)
+          setHistory((prev) => prev.filter((h) => h.id !== id))
+        }}
+      />
+      <div className="mx-auto flex max-w-3xl flex-1 flex-col gap-6 px-4 py-8">
+      <div className="flex items-center gap-3">
+        <ZapIcon className="size-7" />
+        <div>
+          <h1 className="text-xl font-semibold">API Tester</h1>
+          <p className="text-sm text-muted-foreground">
+            Send requests and inspect responses
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+      </div>
+
+      <div className="flex items-end gap-2">
+        <Select
+          value={method}
+          onValueChange={(value) =>
+            setRequestConfig((prev) => ({
+              ...prev,
+              method: value as 'GET' | 'POST',
+            }))
+          }
+        >
+          <SelectTrigger className="w-[120px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="GET">GET</SelectItem>
+            <SelectItem value="POST">POST</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Input
+          placeholder="https://api.example.com/users"
+          value={requestConfig.url}
+          onChange={(e) =>
+            setRequestConfig((prev) => ({ ...prev, url: e.target.value }))
+          }
+          className="flex-1"
+        />
+
+        <Button onClick={handleSend} disabled={loading}>
+          Send
+        </Button>
+      </div>
+
+      <Tabs defaultValue="headers">
+        <TabsList>
+          <TabsTrigger value="headers">Headers</TabsTrigger>
+          <TabsTrigger value="body">Body</TabsTrigger>
+        </TabsList>
+        <TabsContent value="headers">
+          <HeaderEditor
+            headers={requestConfig.headers}
+            onChange={(headers) =>
+              setRequestConfig((prev) => ({ ...prev, headers }))
+            }
+          />
+        </TabsContent>
+        <TabsContent value="body">
+          {method === 'POST' ? (
+            <MonacoEditor
+              height="200px"
+              language="json"
+              theme="vs-dark"
+              value={requestConfig.body}
+              onChange={(value) =>
+                setRequestConfig((prev) => ({ ...prev, body: value || '' }))
+              }
+              options={{
+                minimap: { enabled: false },
+                fontSize: 13,
+                lineNumbers: 'on',
+                scrollBeyondLastLine: false,
+              }}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+          ) : (
+            <p className="py-4 text-sm text-muted-foreground">
+              Body is not available for GET requests
+            </p>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      <ResponseViewer response={response} loading={loading} />
+      </div>
     </div>
-  );
+  )
 }
