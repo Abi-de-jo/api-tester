@@ -6,13 +6,6 @@ import { toast } from 'sonner'
 import { ZapIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { HeaderEditor } from '@/components/header-editor'
 import { ResponseViewer } from '@/components/response-viewer'
@@ -32,55 +25,12 @@ export default function Home() {
   const [response, setResponse] = useState<ApiResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [history, setHistory] = useState<HistoryItem[]>([])
-  const [featureFlags, setFeatureFlags] = useState<Record<string, boolean>>({})
-  const [flagsLoading, setFlagsLoading] = useState(true)
-
-  const alwaysVisible: HttpMethod[] = ['GET']
-  const flagControlled: { method: HttpMethod; flag: string }[] = [
-    { method: 'POST', flag: 'post_method' },
-  ]
-
-  const availableMethods = [
-    ...alwaysVisible,
-    ...flagControlled.filter((f) => featureFlags[f.flag] === true).map((f) => f.method),
-  ]
-
-  useEffect(() => {
-    setHistory(getHistory())
-  }, [])
-
-  useEffect(() => {
-    function getUserId(): string {
-      let userId = localStorage.getItem('api_tester_user_id')
-      if (!userId) {
-        userId = 'user_' + crypto.randomUUID()
-        localStorage.setItem('api_tester_user_id', userId)
-      }
-      return userId
-    }
-
-    async function loadFlags() {
-      try {
-        const userId = getUserId()
-        const res = await fetch(`/api/feature-flags?user_id=${userId}`)
-        const data = await res.json()
-        if (data.flags) setFeatureFlags(data.flags)
-      } catch {
-        // flags unavailable — fall back to GET only
-      } finally {
-        setFlagsLoading(false)
-      }
-    }
-    loadFlags()
-  }, [])
 
   const method = requestConfig.method
 
   useEffect(() => {
-    if (!availableMethods.includes(method)) {
-      setRequestConfig((prev) => ({ ...prev, method: 'GET' }))
-    }
-  }, [featureFlags])
+    setHistory(getHistory())
+  }, [])
 
   const handleSend = useCallback(async () => {
     const url = requestConfig.url.trim()
@@ -91,15 +41,6 @@ export default function Home() {
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       toast.error('URL must start with http:// or https://')
       return
-    }
-
-      if (['POST', 'PUT', 'PATCH'].includes(method) && requestConfig.body.trim()) {
-      try {
-        JSON.parse(requestConfig.body)
-      } catch {
-        toast.error('Invalid JSON body')
-        return
-      }
     }
 
     const headers: Record<string, string> = {}
@@ -171,26 +112,9 @@ export default function Home() {
       </div>
 
       <div className="flex items-end gap-2">
-        <Select
-          value={method}
-          onValueChange={(value) =>
-            setRequestConfig((prev) => ({
-              ...prev,
-              method: value as HttpMethod,
-            }))
-          }
-        >
-          <SelectTrigger className="w-[120px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {availableMethods.map((m) => (
-              <SelectItem key={m} value={m}>
-                {m}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex h-10 w-[120px] items-center justify-center rounded-md border bg-muted text-sm font-medium">
+          GET
+        </div>
 
         <Input
           placeholder="https://api.example.com/users"

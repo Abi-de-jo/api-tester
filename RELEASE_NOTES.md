@@ -89,12 +89,31 @@ c06354c feat: install @supabase/supabase-js and create client
 
 ---
 
-## v1.2.0 (planned)
-- Authentication helpers (Bearer, Basic, API Key presets)
-- Import cURL commands
-- Request collections / saved requests
+## v1.2.0 — Remove Feature Flags & Simplify to GET-only (2026-07-19)
 
-### v2.0.0 (planned)
+### What's New
+
+**Back to basics** — all feature flag code has been removed. The app now ships with only the GET method, making it a focused, lightweight API testing tool for showcase.
+
+#### Changes
+- **Removed all feature flag logic** from the main page — `getUserId()`, `loadFlags()`, and flag-gated method visibility are gone
+- **GET-only interface** — the method selector is replaced with a static GET badge
+- **Deleted `src/app/api/feature-flags/route.ts`** — no more server-side flag API
+- **Deleted `src/lib/supabase.ts`** — Supabase client removed
+- **Removed `@supabase/supabase-js` dependency** — cleaner dependency tree
+- **Cleaned `.env.local`** — Supabase environment variables removed
+- **Updated README** — feature flags section removed, project structure simplified
+
+#### Infrastructure
+- **Zero external dependencies** for feature management — no database, no API calls on page load
+- **Smaller build** — fewer packages, faster cold starts
+
+#### Commits
+```
+<will be added after push>
+```
+
+---
 - Environment variables
 - AI-powered error explanations
 - Code generation (cURL, Python, JavaScript, Go)
