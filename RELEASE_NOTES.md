@@ -21,7 +21,8 @@
 
 #### Commits
 ```
-(see git log for v1.2.0)
+9f3a4f0 v1.2.0: restore simple GET+POST dropdown MVP, remove feature flag system
+0150f62 v1.2.0: remove feature flags, simplify to GET-only
 ```
 
 ---
