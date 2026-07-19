@@ -1,5 +1,77 @@
 # Release Notes
 
+## v1.3.0 — user_id gated POST via Supabase allowlist (2026-07-19)
+
+### What's New
+
+**POST is gated by a Supabase `post_access` allowlist.** The user enters a `user_id` in the UI. If that id is allowlisted, POST is enabled and each POST is logged to `request_logs`. The allowlist **is** the feature flag — no temp-id, no `NEXT_PUBLIC_ENABLE_POST`.
+
+#### Core behavior
+- **User ID input** — always visible below the URL bar; blur/Enter checks `/api/access`
+- **GET always on** — unchanged; LocalStorage history kept
+- **POST UX** — greys out unless `postEnabled`; server is the authoritative gate
+- **Server proxy gate** — `ENABLE_POST_METHOD` kill switch + `isValidUserId` + `canUsePost`
+- **Audit log** — `logRequest` inserts into `request_logs` with sanitized headers
+
+#### New / changed files
+- `src/lib/validate.ts` — `isValidUserId`
+- `src/lib/supabase-server.ts` — `pg.Pool`, `canUsePost`, `logRequest`, `sanitizeHeaders`
+- `src/app/api/access/route.ts` — `GET ?user_id=` → `{ postEnabled }`
+- `src/app/api/proxy/route.ts` — POST allowlist + logging
+- `src/app/page.tsx` — user_id field + access indicator
+- `migrations/001_post_access.sql` — schema
+- `tests/validate.test.ts`, `tests/access.test.ts`, `tests/sanitize-headers.test.ts`
+- `.env.example` — placeholders only (no secrets)
+
+#### Migration SQL (run once in Supabase SQL editor)
+
+```sql
+-- Allowlist: owner inserts user_ids that are allowed to use POST
+create table if not exists public.post_access (
+  user_id      text primary key,
+  note         text,
+  created_at   timestamptz not null default now()
+);
+alter table public.post_access enable row level security;
+-- No policies = anon/authenticated cannot touch it. Only server (postgres) access.
+
+-- Audit log of POST requests
+create table if not exists public.request_logs (
+  id              uuid primary key default gen_random_uuid(),
+  user_id         text not null,
+  method          text not null default 'POST',
+  url             text not null,
+  headers         jsonb not null default '{}'::jsonb,
+  body            jsonb not null default '{}'::jsonb,
+  status          int,
+  response_time_ms int,
+  created_at      timestamptz not null default now()
+);
+create index if not exists request_logs_user_id_idx on public.request_logs(user_id);
+create index if not exists request_logs_created_at_idx on public.request_logs(created_at desc);
+alter table public.request_logs enable row level security;
+-- Server-only writes (postgres connection bypasses RLS)
+```
+
+Seed example:
+
+```sql
+INSERT INTO post_access (user_id, note) VALUES ('some-id', 'Abi');
+```
+
+#### Env
+- `SUPABASE_DB_URL` — server-only Postgres URL
+- `ENABLE_POST_METHOD=true` — master kill switch (server-only)
+- **Do not** set `NEXT_PUBLIC_ENABLE_POST`
+
+#### Hard scope (what this is NOT)
+- No PUT/PATCH/DELETE
+- No Supabase Auth / JWT / login
+- No auto temp-id / browser-id
+- No admin UI for the allowlist (use Supabase dashboard)
+
+---
+
 ## v1.2.0 — Restore Simple GET + POST MVP (2026-07-19)
 
 ### What's New
