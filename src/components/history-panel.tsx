@@ -97,8 +97,12 @@ export function HistoryPanel({
                           item.request.method === 'GET' ? 'default' : 'secondary'
                         }
                         className={cn(
-                          item.request.method === 'POST' &&
-                            'border-green-500/30 bg-green-500/15 text-green-600'
+                          (item.request.method === 'POST' || item.request.method === 'PUT') &&
+                            'border-green-500/30 bg-green-500/15 text-green-600',
+                          item.request.method === 'PATCH' &&
+                            'border-orange-500/30 bg-orange-500/15 text-orange-600',
+                          item.request.method === 'DELETE' &&
+                            'border-red-500/30 bg-red-500/15 text-red-600'
                         )}
                       >
                         {item.request.method}

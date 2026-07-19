@@ -4,9 +4,11 @@ export interface HeaderPair {
   enabled: boolean
 }
 
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+
 export interface RequestConfig {
   url: string
-  method: 'GET' | 'POST'
+  method: HttpMethod
   headers: HeaderPair[]
   body: string
 }
