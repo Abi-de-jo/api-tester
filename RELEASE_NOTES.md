@@ -54,25 +54,26 @@ fab4954 Initial commit from Create Next App
 
 ---
 
-## v1.1.0 — Feature Flags & More HTTP Methods (2026-07-19)
+## v1.1.0 — Post-Method Feature Flag (2026-07-19)
 
 ### What's New
 
-**PUT, PATCH, DELETE methods** — now available behind Supabase feature flags.
+**POST behind feature flag** — POST method is now controlled by a Supabase-backed flag. Only users with the `post_method` flag enabled can see POST. GET remains available to everyone.
 
 #### Core Features
-- **PUT / PATCH / DELETE** — full HTTP method support alongside GET and POST
-- **Supabase feature flags** — PUT, PATCH, DELETE are controlled via DB-based flags
-- **Method-aware body** — body editor shows for POST, PUT, and PATCH (not GET/DELETE)
-- **Color-coded badges** — PATCH (orange), DELETE (red), POST/PUT (green) in history
+- **Selective POST access** — POST method visibility controlled by `post_method` feature flag
+- **GET always available** — no flag required for GET requests
+- **Feature flag API** — `/api/feature-flags` for fetching flags by user
 
 #### Infrastructure
-- **Supabase integration** — `@supabase/supabase-js` client initialized
-- **Feature flags table** — `feature_flags` in Supabase with RLS and default entries
-- **API route** — `/api/feature-flags` for fetching and toggling flags
-- **Proxy update** — now forwards body for PUT and PATCH, auto-sets Content-Type
+- **Supabase integration** — `feature_flags` table with RLS, anon read policy
+- **API route** — `/api/feature-flags` with GET (fetch flags) and POST (upsert flag)
+- **Supabase client** — `src/lib/supabase.ts` initialized with env vars
+- **Flag-controlled UI** — method selector dynamically shows/hides POST based on flag
 
 #### Commits
+```
+<commits to be added>
 ```
 4c3a8b0 docs: update README and release notes for v1.1.0 feature flags
 28420f4 feat: add PUT/PATCH/DELETE methods with Supabase feature flag gating

@@ -108,16 +108,15 @@ All requests go through `/api/proxy` to avoid CORS restrictions. The proxy:
 
 ## Feature Flags
 
-HTTP methods (PUT, PATCH, DELETE) are controlled via a Supabase-backed feature flag system.
+POST method is controlled via a Supabase-backed feature flag system. GET is always available to everyone.
 
-| Flag     | Default | Description                       |
-|----------|---------|-----------------------------------|
-| `PUT`    | off     | Enable PUT requests               |
-| `PATCH`  | off     | Enable PATCH requests             |
-| `DELETE` | off     | Enable DELETE requests            |
+| Flag          | Default | Description                  |
+|---------------|---------|------------------------------|
+| `post_method` | off     | Enable POST requests for user|
 
 - Flags are fetched from `/api/feature-flags` on page load
-- GET and POST are always available — no flag required
+- GET is always available — no flag required
+- POST requires the `post_method` flag to be enabled for the user
 - Toggle flags by posting to the API or updating the `feature_flags` table in Supabase
 
 ## Future Plans
