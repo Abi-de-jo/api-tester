@@ -4,8 +4,8 @@ import { createClient } from '@supabase/supabase-js'
 export async function GET(request: NextRequest) {
   const userId = request.nextUrl.searchParams.get('user_id') || 'default'
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const supabaseUrl = process.env.SUPABASE_URL!
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY!
   const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
   const { data, error } = await supabase
@@ -26,8 +26,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const supabaseUrl = process.env.SUPABASE_URL!
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY!
   const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
   const { feature_name, user_id, enabled } = await request.json()
