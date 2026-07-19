@@ -13,7 +13,7 @@ A lightweight, fast API testing tool for developers who need a clutter-free alte
 
 ## Features
 
-- **GET & POST requests** — test any API endpoint instantly
+- **GET, POST, PUT, PATCH, DELETE** — test any API endpoint with full HTTP method support
 - **Custom headers** — add Authorization, Content-Type, or any header
 - **JSON body editor** — Monaco Editor with syntax highlighting and formatting
 - **Server-side proxy** — no CORS issues, all requests go through Next.js API route
@@ -67,9 +67,9 @@ npm start
 ## How It Works
 
 1. **Enter a URL** — paste any API endpoint
-2. **Choose method** — GET or POST
+2. **Choose method** — GET, POST, PUT, PATCH, or DELETE
 3. **Add headers** (optional) — Authorization, Content-Type, etc.
-4. **Add body** (POST only) — JSON editor with formatting
+4. **Add body** (POST/PUT/PATCH only) — JSON editor with formatting
 5. **Click Send** — request goes through server proxy (no CORS)
 6. **View response** — status, timing, formatted JSON
 
@@ -79,7 +79,8 @@ npm start
 api-tester/
 ├── src/
 │   ├── app/
-│   │   ├── api/proxy/route.ts    # Server-side proxy (avoids CORS)
+│   │   ├── api/proxy/route.ts        # Server-side proxy (avoids CORS)
+│   │   ├── api/feature-flags/route.ts # Feature flags API
 │   │   ├── globals.css            # Tailwind/shadcn theme
 │   │   ├── layout.tsx             # Root layout
 │   │   └── page.tsx               # Main UI
@@ -90,6 +91,7 @@ api-tester/
 │   │   └── ui/                    # shadcn/ui components
 │   ├── lib/
 │   │   ├── history.ts             # LocalStorage helpers
+│   │   ├── supabase.ts            # Supabase client
 │   │   └── utils.ts               # Utility functions
 │   └── types.ts                   # Shared TypeScript types
 ├── .vercel/                       # Vercel project config
@@ -101,12 +103,26 @@ api-tester/
 All requests go through `/api/proxy` to avoid CORS restrictions. The proxy:
 
 - Forwards the request method, headers, and body to the target URL
-- Auto-sets `Content-Type: application/json` for POST if missing
+- Auto-sets `Content-Type: application/json` for POST/PUT/PATCH if missing
 - Returns status code, response body, and timing data
+
+## Feature Flags
+
+HTTP methods (PUT, PATCH, DELETE) are controlled via a Supabase-backed feature flag system.
+
+| Flag     | Default | Description                       |
+|----------|---------|-----------------------------------|
+| `PUT`    | off     | Enable PUT requests               |
+| `PATCH`  | off     | Enable PATCH requests             |
+| `DELETE` | off     | Enable DELETE requests            |
+
+- Flags are fetched from `/api/feature-flags` on page load
+- GET and POST are always available — no flag required
+- Toggle flags by posting to the API or updating the `feature_flags` table in Supabase
 
 ## Future Plans
 
-- [ ] PUT / PATCH / DELETE methods
+- [ ] Authentication helpers (Bearer, Basic, API Key)
 - [ ] Authentication helpers (Bearer, Basic, API Key)
 - [ ] Import cURL commands
 - [ ] Request collections / saved requests

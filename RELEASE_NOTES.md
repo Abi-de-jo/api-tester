@@ -54,14 +54,32 @@ fab4954 Initial commit from Create Next App
 
 ---
 
-## Upcoming
+## v1.1.0 — Feature Flags & More HTTP Methods (2026-07-19)
 
-### v1.1.0 (planned)
-- PUT / PATCH / DELETE methods
-- Method-aware body validation
-- Color-coded HTTP method badges
+### What's New
 
-### v1.2.0 (planned)
+**PUT, PATCH, DELETE methods** — now available behind Supabase feature flags.
+
+#### Core Features
+- **PUT / PATCH / DELETE** — full HTTP method support alongside GET and POST
+- **Supabase feature flags** — PUT, PATCH, DELETE are controlled via DB-based flags
+- **Method-aware body** — body editor shows for POST, PUT, and PATCH (not GET/DELETE)
+- **Color-coded badges** — PATCH (orange), DELETE (red), POST/PUT (green) in history
+
+#### Infrastructure
+- **Supabase integration** — `@supabase/supabase-js` client initialized
+- **Feature flags table** — `feature_flags` in Supabase with RLS and default entries
+- **API route** — `/api/feature-flags` for fetching and toggling flags
+- **Proxy update** — now forwards body for PUT and PATCH, auto-sets Content-Type
+
+#### Commits
+```
+<commits to be added>
+```
+
+---
+
+## v1.2.0 (planned)
 - Authentication helpers (Bearer, Basic, API Key presets)
 - Import cURL commands
 - Request collections / saved requests
